@@ -1,0 +1,35 @@
+# some points need to be memorized :
+# 
+#  1) for some reason, the source file must be compiled except the bottom library
+#     For example, fftw3.so can be linked, but myfft.so cannot. because myfft.so
+#     calls fftw3.so, so it is not in the bottom rank. The same goes to cqcgl1d.so
+#     
+#  2) It is better to use lib rather than cxxflags
+#
+#  3) after version 1.47.0 bjam is replace by b2
+# 
+use-project /boost : /usr/local/home/xiong/apps/sources/boost_1_57_0 ;
+
+project
+: requirements <library>/boost/python//boost_python 
+<implicit-dependency>/boost//headers 
+<include>/usr/local/home/xiong/apps/BoostNumpy/include/
+<include>../../../include
+<include>/usr/local/home/xiong/apps/eigen/include/eigen3
+: usage-requirements <implicit-dependency>/boost//headers 	 
+;
+
+import python ;
+
+# define a new variant => in order to keep assert() functions 
+variant release_assert : <optimization>speed <inlining>full <debug-symbols>off <runtime-debugging>off ;
+
+lib np : : <name>boost_numpy <file>/usr/local/home/xiong/apps/BoostNumpy/lib/libboost_numpy.so ;
+
+python-extension py_ped : py_ped.cc np ../ped.cc 
+: <variant>release_assert <optimization>speed
+: <link>shared <cxxflags>"-std=c++11" 
+;
+
+install py_extension : py_ped : <install-dependencies>on <install-type>SHARED_LIB <install-type>LIB <install-type>EXE <install-type>PYTHON_EXTENSION  <location>./pylib  ;
+ 
